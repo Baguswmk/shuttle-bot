@@ -67,9 +67,141 @@ export async function showMainMenu(ctx: BotContext) {
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
 }
 
+export async function showOrderHistory(ctx: BotContext) {
+  const from = ctx.from;
+  if (!from) return;
+
+  const orders = await getOrdersByUser(BigInt(from.id), 10);
+
+  if (orders.length === 0) {
+    return ctx.reply(
+      '📋 Belum ada riwayat pesanan.',
+      { reply_markup: new InlineKeyboard().text('🏠 Menu Utama', 'menu:home') },
+    );
+  }
+
+  const typeEmoji = { ANJEM: '🚗', JASTIP: '🛍', JASA: '✨' };
+  const statusLabel: Record<string, string> = {
+    WAITING: '⏳ Menunggu', MATCHED: '🔍 Diproses',
+    RUNNING: '🚀 Berjalan', DONE: '✅ Selesai', CANCELLED: '❌ Dibatalkan',
+  };
+
+  const lines = orders.map((o, i) => {
+    const emoji = typeEmoji[o.type];
+    const status = statusLabel[o.status];
+    const price = `Rp${o.estimatedPrice.toLocaleString('id-ID')}`;
+    const rating = o.rating ? ` · ⭐${o.rating}` : '';
+    const date = o.createdAt.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+    return `${i + 1}. ${emoji} ${status} · ${price}${rating} · ${date}`;
+  });
+
+  await ctx.reply(
+    `📋 <b>Riwayat Pesanan</b>\n\n${lines.join('\n')}`,
+    { parse_mode: 'HTML', reply_markup: new InlineKeyboard().text('🏠 Menu Utama', 'menu:home') },
+  );
+}
+
+export async function showFreelancerProfile(ctx: BotContext) {
+  const from = ctx.from;
+  if (!from) return;
+
+  const freelancer = await db.freelancer.findFirst({
+    where: { user: { telegramId: BigInt(from.id) } },
+    include: { user: true },
+  });
+
+  if (!freelancer) {
+    return ctx.reply(
+      '❌ Kamu belum terdaftar sebagai Freelancer.\n\nDaftar sekarang untuk mulai menghasilkan uang!',
+      { reply_markup: new InlineKeyboard().text('📝 Daftar Freelancer', 'menu:register').row().text('🏠 Menu Utama', 'menu:home') }
+    );
+  }
+
+  const statusLabel: Record<string, string> = {
+    PENDING: '⏳ Menunggu verifikasi', APPROVED: '✅ Aktif',
+    SUSPENDED: '🚫 Disuspend', BANNED: '⛔ Dibanned',
+  };
+
+  const usernameStr = freelancer.user.username
+    ? `@${freelancer.user.username}`
+    : '<i>(Belum diatur)</i>';
+
+  const phoneStr = freelancer.user.phone
+    ? freelancer.user.phone
+    : '<i>(Belum diatur)</i>';
+
+  const keyboard = new InlineKeyboard();
+  if (freelancer.status === 'APPROVED') {
+    keyboard.text('✏️ Edit Profil', 'profile:edit').row();
+  }
+  keyboard.text('🏠 Menu Utama', 'menu:home');
+
+  await ctx.reply(
+    `👤 <b>Profil Freelancer</b>\n\n` +
+    `• <b>Nama:</b> ${freelancer.user.name}\n` +
+    `• <b>No. HP:</b> ${phoneStr}\n` +
+    `• <b>Username Telegram:</b> ${usernameStr}\n` +
+    `• <b>Status:</b> ${statusLabel[freelancer.status]}\n` +
+    `• <b>Rating:</b> ${freelancer.avgRating.toFixed(1)} / 5.0\n` +
+    `• <b>Total Order:</b> ${freelancer.totalOrders}\n` +
+    `• <b>Risk Score:</b> ${freelancer.riskScore}/100\n` +
+    `• <b>Kontak Darurat:</b> ${freelancer.emergencyName} (${freelancer.emergencyPhone})`,
+    { parse_mode: 'HTML', reply_markup: keyboard },
+  );
+}
+
+export async function cancelActiveOrder(ctx: BotContext) {
+  const from = ctx.from;
+  if (!from) return;
+
+  const activeOrderRaw = await getActiveOrderByTelegramId(BigInt(from.id));
+  if (!activeOrderRaw) {
+    return ctx.reply('❌ Kamu tidak memiliki pesanan aktif yang sedang berjalan.');
+  }
+
+  const activeOrder = await getOrderById(activeOrderRaw.id);
+  if (!activeOrder) {
+    return ctx.reply('❌ Pesanan tidak ditemukan.');
+  }
+
+  await updateOrderStatus(activeOrder.id, 'CANCELLED', 'Dibatalkan oleh pemesan');
+
+  // Notify freelancer if matched or running
+  if (activeOrder.freelancer?.user?.telegramId) {
+    await notifyUser(
+      activeOrder.freelancer.user.telegramId,
+      `⚠️ <b>Pesanan #${activeOrder.orderNumber} telah dibatalkan oleh pemesan.</b>`,
+    ).catch(() => {});
+  }
+
+  await ctx.reply(
+    `❌ <b>Pesanan #${activeOrder.orderNumber} berhasil dibatalkan.</b>`,
+    { parse_mode: 'HTML', reply_markup: new InlineKeyboard().text('🏠 Menu Utama', 'menu:home') }
+  );
+}
+
+export async function showHelp(ctx: BotContext) {
+  const helpText = `📖 <b>Panduan Penggunaan ${botConfig.name}</b>\n\n` +
+    `Bot ini memudahkan mahasiswa untuk memesan layanan antar-jemput, jastip, dan jasa lainnya secara internal di lingkungan kampus.\n\n` +
+    `<b>Perintah yang tersedia:</b>\n` +
+    `• /start atau /menu - Tampilkan menu utama\n` +
+    `• /profile - Tampilkan profil freelancer Anda\n` +
+    `• /riwayat - Tampilkan riwayat pesanan Anda\n` +
+    `• /cancel - Batalkan pesanan aktif yang sedang berjalan\n` +
+    `• /help - Tampilkan panduan penggunaan ini\n\n` +
+    `Silakan pilih /menu untuk mulai menggunakan layanan!`;
+
+  await ctx.reply(helpText, { parse_mode: 'HTML', reply_markup: new InlineKeyboard().text('🏠 Menu Utama', 'menu:home') });
+}
+
 export function registerStartHandler(bot: Bot<BotContext>) {
-  // /start command
+  // Commands
   bot.command('start', (ctx) => showMainMenu(ctx));
+  bot.command('menu', (ctx) => showMainMenu(ctx));
+  bot.command('profile', (ctx) => showFreelancerProfile(ctx));
+  bot.command('riwayat', (ctx) => showOrderHistory(ctx));
+  bot.command('cancel', (ctx) => cancelActiveOrder(ctx));
+  bot.command('help', (ctx) => showHelp(ctx));
 
   // Main menu callback
   bot.callbackQuery('menu:home', async (ctx) => {
@@ -80,76 +212,13 @@ export function registerStartHandler(bot: Bot<BotContext>) {
   // Riwayat
   bot.callbackQuery('menu:history', async (ctx) => {
     await ctx.answerCallbackQuery();
-    const orders = await getOrdersByUser(BigInt(ctx.from.id), 10);
-
-    if (orders.length === 0) {
-      return ctx.reply(
-        '📋 Belum ada riwayat pesanan.',
-        { reply_markup: new InlineKeyboard().text('🏠 Menu Utama', 'menu:home') },
-      );
-    }
-
-    const typeEmoji = { ANJEM: '🚗', JASTIP: '🛍', JASA: '✨' };
-    const statusLabel: Record<string, string> = {
-      WAITING: '⏳ Menunggu', MATCHED: '🔍 Diproses',
-      RUNNING: '🚀 Berjalan', DONE: '✅ Selesai', CANCELLED: '❌ Dibatalkan',
-    };
-
-    const lines = orders.map((o, i) => {
-      const emoji = typeEmoji[o.type];
-      const status = statusLabel[o.status];
-      const price = `Rp${o.estimatedPrice.toLocaleString('id-ID')}`;
-      const rating = o.rating ? ` · ⭐${o.rating}` : '';
-      const date = o.createdAt.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-      return `${i + 1}. ${emoji} ${status} · ${price}${rating} · ${date}`;
-    });
-
-    await ctx.reply(
-      `📋 <b>Riwayat Pesanan</b>\n\n${lines.join('\n')}`,
-      { parse_mode: 'HTML', reply_markup: new InlineKeyboard().text('🏠 Menu Utama', 'menu:home') },
-    );
+    await showOrderHistory(ctx);
   });
 
   // Freelancer profile
   bot.callbackQuery('menu:profile', async (ctx) => {
     await ctx.answerCallbackQuery();
-    const freelancer = await db.freelancer.findFirst({
-      where: { user: { telegramId: BigInt(ctx.from.id) } },
-      include: { user: true },
-    });
-    if (!freelancer) return;
-
-    const statusLabel: Record<string, string> = {
-      PENDING: '⏳ Menunggu verifikasi', APPROVED: '✅ Aktif',
-      SUSPENDED: '🚫 Disuspend', BANNED: '⛔ Dibanned',
-    };
-
-    const usernameStr = freelancer.user.username
-      ? `@${freelancer.user.username}`
-      : '<i>(Belum diatur)</i>';
-
-    const phoneStr = freelancer.user.phone
-      ? freelancer.user.phone
-      : '<i>(Belum diatur)</i>';
-
-    const keyboard = new InlineKeyboard();
-    if (freelancer.status === 'APPROVED') {
-      keyboard.text('✏️ Edit Profil', 'profile:edit').row();
-    }
-    keyboard.text('🏠 Menu Utama', 'menu:home');
-
-    await ctx.reply(
-      `👤 <b>Profil Freelancer</b>\n\n` +
-      `• <b>Nama:</b> ${freelancer.user.name}\n` +
-      `• <b>No. HP:</b> ${phoneStr}\n` +
-      `• <b>Username Telegram:</b> ${usernameStr}\n` +
-      `• <b>Status:</b> ${statusLabel[freelancer.status]}\n` +
-      `• <b>Rating:</b> ${freelancer.avgRating.toFixed(1)} / 5.0\n` +
-      `• <b>Total Order:</b> ${freelancer.totalOrders}\n` +
-      `• <b>Risk Score:</b> ${freelancer.riskScore}/100\n` +
-      `• <b>Kontak Darurat:</b> ${freelancer.emergencyName} (${freelancer.emergencyPhone})`,
-      { parse_mode: 'HTML', reply_markup: keyboard },
-    );
+    await showFreelancerProfile(ctx);
   });
 
   // Edit profile main callback

@@ -49,6 +49,21 @@ async function main() {
   registerFreelancerRegistrationHandler(bot);
   registerReportHandler(bot);
 
+  // Set slash commands menu
+  try {
+    await bot.api.setMyCommands([
+      { command: 'start', description: 'Mulai & tampilkan menu utama' },
+      { command: 'menu', description: 'Tampilkan menu utama' },
+      { command: 'profile', description: 'Tampilkan profil freelancer Anda' },
+      { command: 'riwayat', description: 'Tampilkan riwayat pesanan Anda' },
+      { command: 'cancel', description: 'Batalkan pesanan aktif Anda' },
+      { command: 'help', description: 'Tampilkan panduan penggunaan' }
+    ]);
+    console.log('[Bot] Slash commands successfully set');
+  } catch (err) {
+    console.error('[Bot] Failed to set slash commands:', err);
+  }
+
   // ── Express server ────────────────────────────────────────────────────────
   const app = express();
   app.use(express.json());
