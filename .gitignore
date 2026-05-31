@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+*.env.local
+.env.production
+.next/
+.vercel/
+logs/
+*.log
+prisma/migrations/dev.db
+.DS_Store
+Thumbs.db
+refresnsi.html

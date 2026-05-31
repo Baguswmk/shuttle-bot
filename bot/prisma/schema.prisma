@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  FREELANCER
+  ADMIN
+}
+
+enum FreelancerStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+  BANNED
+}
+
+enum OrderStatus {
+  WAITING
+  MATCHED
+  RUNNING
+  DONE
+  CANCELLED
+}
+
+enum OrderType {
+  ANJEM
+  JASTIP
+  JASA
+}
+
+enum ReportStatus {
+  PENDING
+  VALID
+  INVALID
+  ACTIONED
+}
+
+enum SanctionType {
+  WARNING
+  SUSPEND_7D
+  BANNED
+}
+
+model User {
+  id         String   @id @default(cuid())
+  telegramId BigInt   @unique
+  name       String
+  username   String?
+  phone      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  freelancer   Freelancer?
+  ordersAsUser Order[]     @relation("OrderUser")
+  reports      Report[]    @relation("ReportByUser")
+
+  @@map("users")
+}
+
+model Freelancer {
+  id             String           @id @default(cuid())
+  userId         String           @unique
+  user           User             @relation(fields: [userId], references: [id])
+  ktmUrl         String
+  selfieUrl      String?
+  emergencyName  String
+  emergencyPhone String
+  status         FreelancerStatus @default(PENDING)
+  riskScore      Int              @default(0)
+  totalOrders    Int              @default(0)
+  avgRating      Float            @default(0)
+  approvedAt     DateTime?
+  suspendedUntil DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  ordersAsFreelancer Order[]    @relation("OrderFreelancer")
+  reports            Report[]   @relation("ReportAboutFreelancer")
+  sanctions          Sanction[]
+  contracts          Contract[]
+
+  @@map("freelancers")
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  orderNumber Int         @default(autoincrement())
+  type        OrderType
+  status      OrderStatus @default(WAITING)
+
+  userId String
+  user   User   @relation("OrderUser", fields: [userId], references: [id])
+
+  freelancerId String?
+  freelancer   Freelancer? @relation("OrderFreelancer", fields: [freelancerId], references: [id])
+
+  // Anjem
+  pickupLocation String?
+  dropLocation   String?
+  passengerCount Int?
+
+  // Jastip
+  jastipCategory String?
+  jastipDetail   String?
+
+  // Jasa
+  jasaType   String?
+  jasaDetail String?
+
+  estimatedPrice Int
+  finalPrice     Int?
+
+  rating         Int?
+  ratingComment  String?
+
+  matchedAt    DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contract    Contract?
+  statusLogs  OrderStatusLog[]
+  reports     Report[]
+
+  @@map("orders")
+}
+
+model OrderStatusLog {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id])
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+
+  @@map("order_status_logs")
+}
+
+model Contract {
+  id           String     @id @default(cuid())
+  orderId      String     @unique
+  order        Order      @relation(fields: [orderId], references: [id])
+  freelancerId String
+  freelancer   Freelancer @relation(fields: [freelancerId], references: [id])
+  hash         String     @unique
+  content      Json
+  signedAt     DateTime   @default(now())
+
+  @@map("contracts")
+}
+
+model Report {
+  id           String       @id @default(cuid())
+  orderId      String
+  order        Order        @relation(fields: [orderId], references: [id])
+  reporterId   String
+  reporter     User         @relation("ReportByUser", fields: [reporterId], references: [id])
+  freelancerId String
+  freelancer   Freelancer   @relation("ReportAboutFreelancer", fields: [freelancerId], references: [id])
+  description  String
+  evidenceUrl  String?
+  status       ReportStatus @default(PENDING)
+  adminNote    String?
+  reviewedAt   DateTime?
+  createdAt    DateTime     @default(now())
+
+  @@map("reports")
+}
+
+model Sanction {
+  id           String       @id @default(cuid())
+  freelancerId String
+  freelancer   Freelancer   @relation(fields: [freelancerId], references: [id])
+  type         SanctionType
+  reason       String
+  adminNote    String?
+  expiresAt    DateTime?
+  createdAt    DateTime     @default(now())
+
+  @@map("sanctions")
+}
+
+model BotSession {
+  id        String   @id
+  data      String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("bot_sessions")
+}

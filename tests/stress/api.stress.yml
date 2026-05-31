@@ -1,0 +1,150 @@
+/**
+ * Stress Test —  Shuttle Bot REST API
+ *
+ * Tool: Artillery (https://www.artillery.io)
+ * Install: npm install -g artillery
+ * Run:     artillery run tests/stress/api.stress.yml --output report.json
+ *          artillery report report.json
+ *
+ * Scenarios tested:
+ *  1. Auth login (JWT token acquisition)
+ *  2. Freelancer list (paginated)
+ *  3. Order list (filtered)
+ *  4. Stats dashboard
+ *  5. WebSocket connection burst
+ */
+
+config:
+  target: "http://localhost:3002"
+  phases:
+    # Warm-up: 10 req/s for 30 seconds
+    - name: "Warm-up"
+      duration: 30
+      arrivalRate: 10
+
+    # Ramp-up: 10 → 100 req/s over 60 seconds
+    - name: "Ramp-up"
+      duration: 60
+      arrivalRate: 10
+      rampTo: 100
+
+    # Peak load: 100 req/s for 60 seconds (simulates heavy traffic)
+    - name: "Peak load"
+      duration: 60
+      arrivalRate: 100
+
+    # Spike: sudden burst of 200 req/s for 15 seconds
+    - name: "Spike"
+      duration: 15
+      arrivalRate: 200
+
+    # Cool-down
+    - name: "Cool-down"
+      duration: 30
+      arrivalRate: 10
+
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+  plugins:
+    metrics-by-endpoint: {}
+
+  ensure:
+    # Fail if p95 latency > 2000ms
+    p95: 2000
+    # Fail if error rate > 1%
+    maxErrorRate: 1
+
+scenarios:
+  # ── Scenario 1: Auth → Stats (admin dashboard flow) ──────────────────────
+  - name: "Admin Dashboard Flow"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            username: "{{ $processEnvironment.ADMIN_USERNAME }}"
+            password: "{{ $processEnvironment.ADMIN_PASSWORD }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      - get:
+          url: "/api/stats"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "/api/orders?status=WAITING&page=1&limit=20"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+  # ── Scenario 2: Freelancer listing & filtering ────────────────────────────
+  - name: "Freelancer Browse"
+    weight: 25
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            username: "{{ $processEnvironment.ADMIN_USERNAME }}"
+            password: "{{ $processEnvironment.ADMIN_PASSWORD }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      - get:
+          url: "/api/freelancers?status=APPROVED&page=1&limit=10"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      - get:
+          url: "/api/freelancers?status=PENDING&page=1&limit=10"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      - get:
+          url: "/api/freelancers?minRisk=50&page=1&limit=10"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+  # ── Scenario 3: Health check (high volume, lightweight) ──────────────────
+  - name: "Health Check"
+    weight: 30
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+            - contentType: "application/json"
+
+  # ── Scenario 4: Invalid auth (test auth middleware under load) ────────────
+  - name: "Invalid Auth Rejection"
+    weight: 10
+    flow:
+      - get:
+          url: "/api/stats"
+          headers:
+            Authorization: "Bearer invalid_token_xyz"
+          expect:
+            - statusCode: 401
+
+  # ── Scenario 5: Order listing with multiple filters ───────────────────────
+  - name: "Order Filtering"
+    weight: 5
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            username: "{{ $processEnvironment.ADMIN_USERNAME }}"
+            password: "{{ $processEnvironment.ADMIN_PASSWORD }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      - get:
+          url: "/api/orders?status=DONE&type=ANJEM&page=1&limit=50"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      - get:
+          url: "/api/orders?status=RUNNING&page=1&limit=10"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
