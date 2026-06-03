@@ -206,12 +206,33 @@ export function registerJastipHandler(bot: Bot<BotContext>) {
   // ── Step 6: Create order ──────────────────────────────────────────────────
   bot.callbackQuery('jastip:create', async (ctx) => {
     await ctx.answerCallbackQuery('Membuat pesanan...');
+
+    const draft = ctx.session.orderDraft;
+    if (!draft || !draft.type || draft.estimatedPrice === undefined || !draft.jastipLocations) {
+      await ctx.editMessageReplyMarkup().catch(() => {});
+      return ctx.reply(
+        '❌ <b>Pesanan tidak valid atau sudah diproses.</b>',
+        { parse_mode: 'HTML', reply_markup: new InlineKeyboard().text('🏠 Menu Utama', 'menu:home') }
+      );
+    }
+
+    const active = await getActiveOrderByTelegramId(BigInt(ctx.from.id));
+    if (active) {
+      await ctx.editMessageReplyMarkup().catch(() => {});
+      return ctx.reply(
+        `❌ <b>Kamu tidak dapat membuat pesanan baru!</b>\n\n` +
+        `Kamu masih memiliki pesanan aktif (#${active.orderNumber}). Selesaikan atau batalkan terlebih dahulu.`,
+        { parse_mode: 'HTML', reply_markup: new InlineKeyboard().text('🏠 Menu Utama', 'menu:home') },
+      );
+    }
+
     const user = await db.user.findUnique({ where: { telegramId: BigInt(ctx.from.id) } });
     if (!user) return;
 
-    const draft = ctx.session.orderDraft!;
-    const locs  = draft.jastipLocations!;
+    // Remove buttons to prevent multiple clicks
+    await ctx.editMessageReplyMarkup().catch(() => {});
 
+    const locs  = draft.jastipLocations;
     const order = await createOrder({
       userId:         user.id,
       type:           'JASTIP',
