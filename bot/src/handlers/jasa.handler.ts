@@ -135,9 +135,9 @@ export function registerJasaHandler(bot: Bot<BotContext>) {
 
     const price = parseInt(ctx.message.text.trim().replace(/\D/g, ''));
 
-    if (isNaN(price) || price < 1_000) {
+    if (isNaN(price) || price < 1_000 || price > 999_999_999) {
       return ctx.reply(
-        `❌ <b>Nominal tidak valid!</b>\nMasukkan angka tanpa titik/koma, minimal Rp1.000.\n<i>Contoh: 35000</i>`,
+        `❌ <b>Nominal tidak valid!</b>\nMasukkan angka tanpa titik/koma, minimal Rp1.000 dan maksimal Rp999.999.999.\n<i>Contoh: 35000</i>`,
         { parse_mode: 'HTML' },
       );
     }

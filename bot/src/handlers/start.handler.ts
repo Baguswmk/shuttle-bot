@@ -811,10 +811,10 @@ export function registerStartHandler(bot: Bot<BotContext>) {
     const text = ctx.message.text.trim();
     const parsedPrice = parseInt(text);
 
-    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+    if (isNaN(parsedPrice) || parsedPrice <= 0 || parsedPrice > 999_999_999) {
       return ctx.reply(
         '❌ <b>Nominal tarif tidak valid!</b>\n' +
-        'Harap masukkan angka saja (misal: 15000) tanpa huruf, spasi, atau simbol mata uang.'
+        'Harap masukkan angka saja (misal: 15000) antara Rp1.000 hingga Rp999.999.999.'
       );
     }
 
