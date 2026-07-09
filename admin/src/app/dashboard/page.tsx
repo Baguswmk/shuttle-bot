@@ -98,10 +98,10 @@ export default function OverviewPage() {
 
   if (loading) {
     return (
-      <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-        <span className="font-mono text-xs text-emerald-500/70 tracking-widest uppercase">
-          READING CORES STATE...
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+        <span className="text-xs text-slate-500 tracking-wider uppercase font-medium">
+          Memuat data sistem...
         </span>
       </div>
     );
@@ -109,9 +109,9 @@ export default function OverviewPage() {
 
   if (error) {
     return (
-      <div className="glass-panel border-neon rounded-xl p-6 glow-crimson max-w-2xl mx-auto mt-8">
-        <h3 className="font-mono text-sm text-red-400 font-bold mb-2">SYSTEM ERROR</h3>
-        <p className="font-mono text-xs text-red-500/70">{error}</p>
+      <div className="glass-panel border border-red-500/20 rounded-xl p-6 glow-crimson max-w-2xl mx-auto mt-8">
+        <h3 className="text-sm text-red-400 font-bold mb-2">GAGAL MEMUAT DATA</h3>
+        <p className="text-xs text-slate-400">{error}</p>
       </div>
     );
   }
@@ -120,81 +120,81 @@ export default function OverviewPage() {
   const chartData = stats?.charts?.dailyOrders || [];
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       
       {/* ── Dashboard Cards Grid ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* Card 1: Total Users */}
-        <div className="glass-panel border-neon rounded-xl p-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-300" />
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-mono text-emerald-500/50 uppercase tracking-widest block">
-              Registered Users
+        <div className="glass-panel rounded-xl p-5 relative overflow-hidden group border border-slate-800/40">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full pointer-events-none group-hover:bg-indigo-500/10 transition-all duration-300" />
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Pengguna Terdaftar
             </span>
-            <Users className="w-5 h-5 text-emerald-400" />
+            <Users className="w-5 h-5 text-indigo-400" />
           </div>
-          <div className="text-3xl font-bold font-display tracking-tight text-emerald-100 mb-1">
+          <div className="text-2xl font-bold font-display tracking-tight text-slate-100 mb-1">
             {stats?.totalUsers ?? 0}
           </div>
-          <div className="text-[10px] font-mono text-emerald-500/40">
-            Total verified Telegram accounts
+          <div className="text-[10px] text-slate-500">
+            Total akun Telegram terverifikasi
           </div>
         </div>
 
         {/* Card 2: Active Freelancers */}
-        <div className="glass-panel border-neon rounded-xl p-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-300" />
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-mono text-emerald-500/50 uppercase tracking-widest block">
-              Active Freelancers
+        <div className="glass-panel rounded-xl p-5 relative overflow-hidden group border border-slate-800/40">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full pointer-events-none group-hover:bg-indigo-500/10 transition-all duration-300" />
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Freelancer Aktif
             </span>
-            <UserCheck className="w-5 h-5 text-emerald-400" />
+            <UserCheck className="w-5 h-5 text-indigo-400" />
           </div>
-          <div className="text-3xl font-bold font-display tracking-tight text-emerald-100 mb-1">
+          <div className="text-2xl font-bold font-display tracking-tight text-slate-100 mb-1">
             {stats?.activeFreelancers ?? 0}
           </div>
-          <div className="text-[10px] font-mono text-emerald-500/40 flex items-center gap-1.5">
-            <span>Approved operators</span>
+          <div className="text-[10px] text-slate-500 flex items-center gap-1.5">
+            <span>Mitra terverifikasi</span>
             {stats?.pendingFreelancers && stats.pendingFreelancers > 0 ? (
-              <span className="px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 text-[9px] font-semibold border border-yellow-500/30 animate-pulse">
-                {stats.pendingFreelancers} pending
+              <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[9px] font-medium border border-amber-500/20 animate-pulse">
+                {stats.pendingFreelancers} tertunda
               </span>
             ) : null}
           </div>
         </div>
 
         {/* Card 3: Active Orders */}
-        <div className="glass-panel border-neon rounded-xl p-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-500/5 rounded-bl-full pointer-events-none group-hover:bg-yellow-500/10 transition-all duration-300" />
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-mono text-yellow-500/50 uppercase tracking-widest block">
-              Active Missions
+        <div className="glass-panel rounded-xl p-5 relative overflow-hidden group border border-slate-800/40">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none group-hover:bg-amber-500/10 transition-all duration-300" />
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-semibold text-amber-500/80 uppercase tracking-wider block">
+              Transaksi Aktif
             </span>
-            <Activity className="w-5 h-5 text-yellow-400" />
+            <Activity className="w-5 h-5 text-amber-400" />
           </div>
-          <div className="text-3xl font-bold font-display tracking-tight text-yellow-300 mb-1 glow-gold">
+          <div className="text-2xl font-bold font-display tracking-tight text-amber-400 mb-1">
             {stats?.activeOrders ?? 0}
           </div>
-          <div className="text-[10px] font-mono text-yellow-500/40">
-            Orders in MATCHED or RUNNING state
+          <div className="text-[10px] text-slate-500">
+            Pesanan yang sedang berjalan
           </div>
         </div>
 
         {/* Card 4: Total Orders */}
-        <div className="glass-panel border-neon rounded-xl p-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-300" />
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-mono text-emerald-500/50 uppercase tracking-widest block">
-              Total Operations
+        <div className="glass-panel rounded-xl p-5 relative overflow-hidden group border border-slate-800/40">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full pointer-events-none group-hover:bg-indigo-500/10 transition-all duration-300" />
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Total Transaksi
             </span>
-            <CheckCircle className="w-5 h-5 text-emerald-400" />
+            <CheckCircle className="w-5 h-5 text-indigo-400" />
           </div>
-          <div className="text-3xl font-bold font-display tracking-tight text-emerald-100 mb-1">
+          <div className="text-2xl font-bold font-display tracking-tight text-slate-100 mb-1">
             {stats?.totalOrders ?? 0}
           </div>
-          <div className="text-[10px] font-mono text-emerald-500/40">
-            All-time system orders logged
+          <div className="text-[10px] text-slate-500">
+            Semua pesanan yang pernah tercatat
           </div>
         </div>
 
@@ -204,19 +204,19 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Graph Card */}
-        <div className="glass-panel border-neon rounded-xl p-6 lg:col-span-2 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-6">
+        <div className="glass-panel rounded-xl p-5 lg:col-span-2 flex flex-col justify-between border border-slate-800/40">
+          <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-sm font-semibold font-display tracking-wide text-emerald-200">
-                Operations Traffic (Last 7 Days)
+              <h3 className="text-sm font-semibold text-slate-200">
+                Statistik Pesanan (7 Hari Terakhir)
               </h3>
-              <p className="text-[10px] font-mono text-emerald-500/40">
-                Order frequency trends by category
+              <p className="text-[10px] text-slate-500">
+                Tren frekuensi pesanan berdasarkan kategori
               </p>
             </div>
-            <div className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-mono">
+            <div className="inline-flex items-center gap-1.5 text-xs text-indigo-400 font-medium">
               <TrendingUp className="w-4 h-4" />
-              <span>ACTIVE FLOWS</span>
+              <span>TREN AKTIF</span>
             </div>
           </div>
 
@@ -227,48 +227,46 @@ export default function OverviewPage() {
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorAnjem" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="colorJastip" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.25}/>
-                      <stop offset="95%" stopColor="#fbbf24" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="colorJasa" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25}/>
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2}/>
                       <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(16, 185, 129, 0.05)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
                   <XAxis 
                     dataKey="date" 
-                    stroke="rgba(16, 185, 129, 0.3)" 
-                    tick={{ fill: 'rgba(16, 185, 129, 0.6)', fontSize: 10, fontFamily: 'monospace' }} 
+                    stroke="rgba(255, 255, 255, 0.1)" 
+                    tick={{ fill: '#64748b', fontSize: 10 }} 
                   />
                   <YAxis 
-                    stroke="rgba(16, 185, 129, 0.3)" 
-                    tick={{ fill: 'rgba(16, 185, 129, 0.6)', fontSize: 10, fontFamily: 'monospace' }} 
+                    stroke="rgba(255, 255, 255, 0.1)" 
+                    tick={{ fill: '#64748b', fontSize: 10 }} 
                   />
                   <Tooltip
                     contentStyle={{
-                      background: 'rgba(9, 21, 13, 0.85)',
-                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      background: '#0f172a',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
                       borderRadius: '8px',
-                      fontFamily: 'monospace',
                       fontSize: '11px',
-                      color: '#ecfdf5',
-                      boxShadow: '0 0 15px rgba(16,185,129,0.1)'
+                      color: '#f8fafc',
                     }}
                   />
                   <Legend 
-                    wrapperStyle={{ fontSize: 10, fontFamily: 'monospace', paddingTop: 10 }}
+                    wrapperStyle={{ fontSize: 10, paddingTop: 10 }}
                     iconType="circle"
                   />
                   <Area 
                     name="Antar Jemput"
                     type="monotone" 
                     dataKey="ANJEM" 
-                    stroke="#10b981" 
+                    stroke="#6366f1" 
                     strokeWidth={2}
                     fillOpacity={1} 
                     fill="url(#colorAnjem)" 
@@ -277,7 +275,7 @@ export default function OverviewPage() {
                     name="Jastip"
                     type="monotone" 
                     dataKey="JASTIP" 
-                    stroke="#fbbf24" 
+                    stroke="#f59e0b" 
                     strokeWidth={2}
                     fillOpacity={1} 
                     fill="url(#colorJastip)" 
@@ -294,36 +292,36 @@ export default function OverviewPage() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-xs font-mono text-emerald-800">
-                NO TRAFFIC RECORDED YET
+              <div className="h-full flex items-center justify-center text-xs text-slate-500">
+                BELUM ADA TRANSAKSI TERCATAT
               </div>
             )}
           </div>
         </div>
 
         {/* Category Breakdown Sidebar card */}
-        <div className="glass-panel border-neon rounded-xl p-6 flex flex-col justify-between">
+        <div className="glass-panel rounded-xl p-5 flex flex-col justify-between border border-slate-800/40">
           <div>
-            <h3 className="text-sm font-semibold font-display tracking-wide text-emerald-200 mb-6">
-              Layanan Distribution
+            <h3 className="text-sm font-semibold text-slate-200 mb-5">
+              Distribusi Layanan
             </h3>
             
             <div className="space-y-4">
               {/* Category 1: Anjem */}
-              <div className="p-3.5 rounded-lg bg-forest-900/40 border border-emerald-500/10 hover:border-emerald-500/20 transition-all flex items-center gap-4">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+              <div className="p-3.5 rounded-lg bg-slate-900/40 border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
                   <Car className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between text-xs font-mono mb-1">
-                    <span className="text-emerald-300 font-semibold">Antar Jemput</span>
-                    <span className="text-emerald-500">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-slate-300 font-medium">Antar Jemput</span>
+                    <span className="text-indigo-400 font-semibold">
                       {stats?.charts?.dailyOrders?.reduce((acc, curr) => acc + (curr.ANJEM || 0), 0) || 0} order
                     </span>
                   </div>
-                  <div className="w-full bg-forest-950 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
                     <div 
-                      className="bg-emerald-500 h-full rounded-full" 
+                      className="bg-indigo-500 h-full rounded-full" 
                       style={{ 
                         width: `${Math.min(100, ((stats?.charts?.dailyOrders?.reduce((acc, curr) => acc + (curr.ANJEM || 0), 0) || 0) / (stats?.totalOrders || 1)) * 100)}%` 
                       }}
@@ -333,20 +331,20 @@ export default function OverviewPage() {
               </div>
 
               {/* Category 2: Jastip */}
-              <div className="p-3.5 rounded-lg bg-forest-900/40 border border-yellow-500/10 hover:border-yellow-500/20 transition-all flex items-center gap-4">
-                <div className="w-10 h-10 rounded-lg bg-yellow-500/10 text-yellow-400 flex items-center justify-center">
+              <div className="p-3.5 rounded-lg bg-slate-900/40 border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
                   <ShoppingBag className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between text-xs font-mono mb-1">
-                    <span className="text-yellow-300 font-semibold">Jastip</span>
-                    <span className="text-yellow-500">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-slate-300 font-medium">Jastip</span>
+                    <span className="text-amber-400 font-semibold">
                       {stats?.charts?.dailyOrders?.reduce((acc, curr) => acc + (curr.JASTIP || 0), 0) || 0} order
                     </span>
                   </div>
-                  <div className="w-full bg-forest-950 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
                     <div 
-                      className="bg-yellow-500 h-full rounded-full" 
+                      className="bg-amber-500 h-full rounded-full" 
                       style={{ 
                         width: `${Math.min(100, ((stats?.charts?.dailyOrders?.reduce((acc, curr) => acc + (curr.JASTIP || 0), 0) || 0) / (stats?.totalOrders || 1)) * 100)}%` 
                       }}
@@ -356,18 +354,18 @@ export default function OverviewPage() {
               </div>
 
               {/* Category 3: Jasa Lain */}
-              <div className="p-3.5 rounded-lg bg-forest-900/40 border border-cyan-500/10 hover:border-cyan-500/20 transition-all flex items-center gap-4">
+              <div className="p-3.5 rounded-lg bg-slate-900/40 border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between text-xs font-mono mb-1">
-                    <span className="text-cyan-300 font-semibold">Jasa Lainnya</span>
-                    <span className="text-cyan-500">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-slate-300 font-medium">Jasa Lainnya</span>
+                    <span className="text-cyan-400 font-semibold">
                       {stats?.charts?.dailyOrders?.reduce((acc, curr) => acc + (curr.JASA || 0), 0) || 0} order
                     </span>
                   </div>
-                  <div className="w-full bg-forest-950 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
                     <div 
                       className="bg-cyan-500 h-full rounded-full" 
                       style={{ 
@@ -381,8 +379,8 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          <div className="text-[10px] font-mono text-emerald-800 text-center mt-6 pt-4 border-t border-emerald-500/10">
-            LAST CORE PULL STATUS: 200 OK
+          <div className="text-[10px] text-slate-500 text-center mt-6 pt-4 border-t border-slate-800">
+            Pembaruan otomatis aktif
           </div>
         </div>
 

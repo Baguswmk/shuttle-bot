@@ -141,6 +141,52 @@ router.patch('/:id/suspend', async (req, res) => {
   res.json({ success: true });
 });
 
+// PATCH /freelancers/:id/unsuspend
+router.patch('/:id/unsuspend', async (req, res) => {
+  await db.freelancer.update({
+    where: { id: req.params.id },
+    data: { status: 'APPROVED', suspendedUntil: null },
+  });
+
+  const freelancer = await db.freelancer.findUnique({
+    where: { id: req.params.id },
+    include: { user: true },
+  });
+
+  if (freelancer) {
+    await notifyUser(
+      freelancer.user.telegramId,
+      `✅ <b>Suspend akunmu telah dicabut!</b>\n\nKamu sekarang bisa kembali menerima pesanan.`,
+    ).catch(() => {});
+  }
+
+  broadcastStats().catch(console.error);
+  res.json({ success: true, freelancer });
+});
+
+// PATCH /freelancers/:id/unban
+router.patch('/:id/unban', async (req, res) => {
+  await db.freelancer.update({
+    where: { id: req.params.id },
+    data: { status: 'APPROVED', suspendedUntil: null },
+  });
+
+  const freelancer = await db.freelancer.findUnique({
+    where: { id: req.params.id },
+    include: { user: true },
+  });
+
+  if (freelancer) {
+    await notifyUser(
+      freelancer.user.telegramId,
+      `✅ <b>Ban akunmu telah dicabut!</b>\n\nKamu sekarang bisa kembali menggunakan layanan dan menerima pesanan.`,
+    ).catch(() => {});
+  }
+
+  broadcastStats().catch(console.error);
+  res.json({ success: true, freelancer });
+});
+
 // PATCH /freelancers/:id — update freelancer details
 router.patch('/:id', async (req, res) => {
   let { name, phone, emergencyName, emergencyPhone, username } = req.body;

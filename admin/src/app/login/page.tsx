@@ -23,7 +23,7 @@ export default function LoginPage() {
 
     try {
       await api.login(username, password);
-      toast.success('Access granted. Secure link established.');
+      toast.success('Login berhasil. Selamat datang di Panel Admin.');
       router.push('/dashboard');
     } catch (err: any) {
       const msg = err.message || 'Login gagal. Periksa username dan password Anda.';
@@ -35,34 +35,34 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen w-full flex items-center justify-center relative bg-grid-dots px-4 overflow-hidden">
-      {/* Decorative Neon Blurs */}
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-emerald-500/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 rounded-full bg-yellow-500/5 blur-[120px] pointer-events-none" />
+    <main className="min-h-screen w-full flex items-center justify-center relative bg-grid-dots px-4 overflow-hidden text-slate-200">
+      {/* Decorative Blurs */}
+      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 rounded-full bg-indigo-600/5 blur-[120px] pointer-events-none" />
 
       {/* Login Card */}
-      <div className="w-full max-w-md glass-panel rounded-2xl p-8 glow-mint border-neon relative z-10 transition-all duration-500">
+      <div className="w-full max-w-md glass-panel rounded-2xl p-8 border border-slate-800/60 relative z-10 transition-all duration-300">
         
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-forest-800 border border-emerald-500/30 text-emerald-400 mb-4 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-slate-900 border border-slate-800 text-indigo-400 mb-4 shadow-[0_4px_20px_rgba(99,102,241,0.15)]">
             <Shield className="w-7 h-7" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight font-display bg-gradient-to-r from-emerald-400 to-yellow-300 bg-clip-text text-transparent">
-          SHUTTLE BOT
+          <h1 className="text-2xl font-bold tracking-tight font-display text-slate-100">
+            SHUTTLE BOT
           </h1>
-          <p className="text-xs text-emerald-500/70 tracking-widest font-mono uppercase mt-1">
-            Operations Control Panel
+          <p className="text-xs text-slate-500 tracking-wider uppercase mt-1.5 font-semibold">
+            Panel Kontrol Admin
           </p>
         </div>
 
         {/* Login Form */}
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-5">
           
           {/* Username Field */}
           <div className="space-y-2">
-            <label className="text-xs font-mono text-emerald-400 uppercase tracking-wider block">
-              Operator Username
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+              Username Admin
             </label>
             <input
               id="username"
@@ -70,15 +70,15 @@ export default function LoginPage() {
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-forest-950/80 border border-emerald-500/20 text-emerald-100 placeholder-emerald-800 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/60 transition-all font-mono"
-              placeholder="Username"
+              className="w-full px-4 py-3 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/40 transition-all text-sm"
+              placeholder="Masukkan username"
             />
           </div>
 
           {/* Password Field */}
           <div className="space-y-2">
-            <label className="text-xs font-mono text-emerald-400 uppercase tracking-wider block">
-              Access Code
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+              Kata Sandi
             </label>
             <div className="relative">
               <input
@@ -87,13 +87,13 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-forest-950/80 border border-emerald-500/20 text-emerald-100 placeholder-emerald-800 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/60 transition-all font-mono pr-12"
-                placeholder="••••••••"
+                className="w-full px-4 py-3 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/40 transition-all text-sm pr-12"
+                placeholder="Masukkan kata sandi"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500/50 hover:text-emerald-400 p-1 rounded transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-350 p-1 rounded transition-colors"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -102,7 +102,7 @@ export default function LoginPage() {
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 rounded-lg bg-red-950/40 border border-red-500/30 text-red-400 text-xs font-mono leading-relaxed">
+            <div className="p-3 rounded-lg bg-red-950/30 border border-red-500/20 text-red-400 text-xs leading-relaxed">
               ⚠️ {error}
             </div>
           )}
@@ -112,23 +112,23 @@ export default function LoginPage() {
             id="login-btn"
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-forest-950 font-bold tracking-wider font-mono shadow-[0_0_20px_rgba(16,185,129,0.2)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            className="w-full py-3.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold tracking-wider text-sm shadow-[0_4px_25px_rgba(99,102,241,0.25)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98]"
           >
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                AUTHENTICATING...
+                MEMASUKI SISTEM...
               </>
             ) : (
-              'ESTABLISH SECURE LINK'
+              'MASUK SEBAGAI ADMIN'
             )}
           </button>
 
         </form>
 
         {/* Footer */}
-        <div className="text-center mt-8 text-[10px] font-mono text-emerald-800">
-          SECURE CHANNEL // SHUTTLE BOT DEPLOYMENT v1.0
+        <div className="text-center mt-8 text-[10px] text-slate-600 uppercase tracking-widest font-semibold">
+          Koneksi Terenkripsi v1.0
         </div>
       </div>
     </main>

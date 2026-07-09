@@ -29,13 +29,15 @@ function SidebarLink({ href, label, icon }: SidebarLinkProps) {
   return (
     <Link
       href={href}
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg border font-mono text-sm tracking-wide transition-all ${
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg border text-sm font-medium transition-all duration-200 ${
         isActive
-          ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30 glow-mint'
-          : 'text-emerald-500/50 border-transparent hover:text-emerald-300 hover:bg-forest-800/40'
+          ? 'bg-indigo-600/10 text-indigo-400 border-indigo-500/20 shadow-sm'
+          : 'text-slate-400 border-transparent hover:text-slate-200 hover:bg-slate-800/50'
       }`}
     >
-      {icon}
+      <div className={`${isActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-200'}`}>
+        {icon}
+      </div>
       <span>{label}</span>
     </Link>
   );
@@ -89,71 +91,71 @@ export default function DashboardLayout({
   const getPageTitle = () => {
     switch (pathname) {
       case '/dashboard':
-        return 'System Overview';
+        return 'Ringkasan Sistem';
       case '/dashboard/freelancers':
-        return 'Freelancers Registry';
+        return 'Daftar Freelancer';
       case '/dashboard/orders':
-        return 'Operations Log';
+        return 'Riwayat Transaksi';
       case '/dashboard/reports':
-        return 'Incident Reports';
+        return 'Laporan Masalah';
       case '/dashboard/broadcast':
-        return 'Comm Dispatcher';
+        return 'Kirim Broadcast';
       default:
-        return 'Operations Panel';
+        return 'Panel Admin';
     }
   };
 
   return (
-    <div className="min-h-screen flex bg-forest-950 text-emerald-100 font-sans bg-grid-dots">
+    <div className="min-h-screen flex bg-slate-950 text-slate-100 font-sans bg-grid-dots">
       
       {/* ── Sidebar ── */}
-      <aside className="w-64 border-r border-emerald-500/10 bg-forest-950/80 backdrop-blur-md flex flex-col justify-between p-6 z-20">
+      <aside className="w-64 border-r border-slate-800/60 bg-slate-900/65 backdrop-blur-lg flex flex-col justify-between p-6 z-20">
         
         {/* Top Section */}
         <div className="space-y-8">
           
           {/* Logo Brand */}
           <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-forest-900 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <div className="w-10 h-10 rounded-lg bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-bold font-display text-sm tracking-wider text-emerald-300 leading-tight">
+              <h2 className="font-bold font-display text-sm tracking-wide text-indigo-200 leading-tight">
                 SHUTTLE BOT
               </h2>
-              <span className="text-[10px] font-mono text-emerald-600 uppercase tracking-widest block">
-                ADMIN CONSOLE
+              <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider block">
+                ADMIN PANEL
               </span>
             </div>
           </Link>
 
           {/* Navigation Links */}
-          <nav className="space-y-1.5">
-            <div className="text-[10px] font-mono text-emerald-800 uppercase tracking-wider pl-4 mb-2">
-              Core Operations
+          <nav className="space-y-1">
+            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider pl-3 mb-2">
+              Menu Utama
             </div>
             
             <SidebarLink 
               href="/dashboard" 
-              label="Overview" 
+              label="Dashboard" 
               icon={<LayoutDashboard className="w-4 h-4" />} 
             />
             
             <SidebarLink 
               href="/dashboard/freelancers" 
-              label="Freelancers" 
+              label="Freelancer" 
               icon={<Users className="w-4 h-4" />} 
             />
             
             <SidebarLink 
               href="/dashboard/orders" 
-              label="Orders Log" 
+              label="Pesanan" 
               icon={<ClipboardList className="w-4 h-4" />} 
             />
             
             <SidebarLink 
               href="/dashboard/reports" 
-              label="Incidents" 
+              label="Laporan" 
               icon={<AlertTriangle className="w-4 h-4" />} 
             />
 
@@ -167,24 +169,24 @@ export default function DashboardLayout({
 
         {/* Bottom Section */}
         <div className="space-y-4">
-          <hr className="border-emerald-500/10" />
+          <hr className="border-slate-800/60" />
           
           {/* Operator Badge */}
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-forest-900/40 border border-emerald-500/5">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse glow-mint" />
+          <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800/30 border border-slate-800/50">
+            <div className="w-2 h-2 rounded-full bg-indigo-400 shadow-sm" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-mono text-emerald-400 font-semibold truncate">admin_root</p>
-              <p className="text-[10px] font-mono text-emerald-600 truncate">SYS_OP_LEVEL_1</p>
+              <p className="text-xs font-semibold text-slate-300 truncate">Administrator</p>
+              <p className="text-[10px] text-slate-500 truncate">Sistem Utama</p>
             </div>
           </div>
 
           {/* Logout Button */}
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-transparent font-mono text-sm tracking-wide text-red-400/70 hover:text-red-400 hover:bg-red-950/20 hover:border-red-950/40 transition-all cursor-pointer"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-transparent text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-950/20 hover:border-red-900/30 transition-all duration-200 cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
-            <span>TERMINATE LINK</span>
+            <span>Keluar</span>
           </button>
         </div>
       </aside>
@@ -193,11 +195,11 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         
         {/* Topbar/Header */}
-        <header className="h-16 border-b border-emerald-500/10 bg-forest-950/40 backdrop-blur-md px-8 flex items-center justify-between z-10">
+        <header className="h-16 border-b border-slate-800/60 bg-slate-900/40 backdrop-blur-md px-8 flex items-center justify-between z-10">
           
           {/* Page Title */}
           <div>
-            <h1 className="text-lg font-bold font-display tracking-wide text-emerald-200">
+            <h1 className="text-base font-bold font-display tracking-wide text-slate-200">
               {getPageTitle()}
             </h1>
           </div>
@@ -207,36 +209,36 @@ export default function DashboardLayout({
             
             {/* API Server connection checker */}
             <div className="flex items-center gap-2">
-              <Server className="w-4 h-4 text-emerald-500/50" />
-              <span className="text-[10px] font-mono text-emerald-500/50 uppercase tracking-wider">
-                API LINK:
+              <Server className="w-4 h-4 text-slate-500" />
+              <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                Status API:
               </span>
               {serverStatus === 'checking' && (
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-forest-800 border border-emerald-500/10 text-emerald-500/50 text-[10px] font-mono font-semibold">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-800 border border-slate-700/50 text-slate-400 text-[10px] font-medium">
                   <Activity className="w-3 h-3 animate-pulse" />
-                  PINGING...
+                  MENGHUBUNGKAN...
                 </div>
               )}
               {serverStatus === 'online' && (
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-semibold shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  ONLINE
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950/30 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  TERSAMBUNG
                 </div>
               )}
               {serverStatus === 'offline' && (
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-950/40 border border-red-500/30 text-red-400 text-[10px] font-mono font-semibold shadow-[0_0_10px_rgba(239,68,68,0.1)]">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-950/30 border border-red-500/20 text-red-400 text-[10px] font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                  OFFLINE
+                  TERPUTUS
                 </div>
               )}
             </div>
 
             {/* Time Stamp */}
-            <div className="hidden md:flex items-center gap-2 border-l border-emerald-500/10 pl-6">
-              <span className="text-[10px] font-mono text-emerald-500/40 uppercase tracking-wider">
-                LOC_TIME:
+            <div className="hidden md:flex items-center gap-2 border-l border-slate-800 pl-6">
+              <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                Waktu:
               </span>
-              <span className="text-xs font-mono text-emerald-400/70" id="live-timer">
+              <span className="text-xs text-slate-400" id="live-timer">
                 {time || '--:--:--'}
               </span>
             </div>

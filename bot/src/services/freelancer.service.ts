@@ -52,13 +52,16 @@ export async function getFreelancerById(id: string) {
   });
 }
 
-export async function findAvailableFreelancer() {
+export async function findAvailableFreelancer(excludeIds?: string[]) {
   return db.freelancer.findFirst({
     where: {
       status: 'APPROVED',
       ordersAsFreelancer: {
         none: { status: { in: ['MATCHED', 'RUNNING'] } },
       },
+      ...(excludeIds && excludeIds.length > 0 && {
+        id: { notIn: excludeIds },
+      }),
     },
     include: { user: true },
     orderBy: { avgRating: 'desc' },

@@ -198,14 +198,25 @@ export const api = {
       method: 'PATCH',
     }),
 
-  suspendFreelancer: (id: string, days = 7) =>
+  suspendFreelancer: (id: string, reason: string, days = 7) =>
     apiRequest<{ message: string; freelancer: Freelancer }>(`/freelancers/${id}/suspend`, {
       method: 'PATCH',
-      body: JSON.stringify({ days }),
+      body: JSON.stringify({ days, reason }),
     }),
 
-  banFreelancer: (id: string) =>
+  banFreelancer: (id: string, reason: string) =>
     apiRequest<{ message: string; freelancer: Freelancer }>(`/freelancers/${id}/ban`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    }),
+
+  unsuspendFreelancer: (id: string) =>
+    apiRequest<{ success: boolean; freelancer: Freelancer }>(`/freelancers/${id}/unsuspend`, {
+      method: 'PATCH',
+    }),
+
+  unbanFreelancer: (id: string) =>
+    apiRequest<{ success: boolean; freelancer: Freelancer }>(`/freelancers/${id}/unban`, {
       method: 'PATCH',
     }),
 

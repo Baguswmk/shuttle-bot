@@ -10,11 +10,11 @@ import { notifyUser } from './notif.service';
  * Sends notifications to both parties if matched.
  * Returns true if matched, false if no freelancer available.
  */
-export async function matchOrder(orderId: string): Promise<boolean> {
+export async function matchOrder(orderId: string, excludeIds: string[] = []): Promise<boolean> {
   const order = await getOrderById(orderId);
   if (!order || order.status !== 'WAITING') return false;
 
-  const freelancer = await findAvailableFreelancer();
+  const freelancer = await findAvailableFreelancer(excludeIds);
   if (!freelancer) {
     // Notify user that no freelancer is available right now
     await notifyUser(
@@ -76,8 +76,8 @@ export async function matchOrder(orderId: string): Promise<boolean> {
         order.user.telegramId,
         '⚠️ Freelancer tidak merespons.\nKami sedang mencari freelancer lain...',
       );
-      // Try matching again
-      await matchOrder(orderId);
+      // Try matching again, excluding this freelancer
+      await matchOrder(orderId, [...excludeIds, freelancer.id]);
     }
   }, 60_000);
 
