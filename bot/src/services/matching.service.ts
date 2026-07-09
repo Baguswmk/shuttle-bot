@@ -1,21 +1,19 @@
 import { InlineKeyboard } from 'grammy';
 import { db } from '../db';
-import { findAvailableFreelancer } from './freelancer.service';
-import { assignFreelancer, getOrderById } from './order.service';
-import { generateContract } from './contract.service';
+import { findAllAvailableFreelancers } from './freelancer.service';
+import { getOrderById } from './order.service';
 import { notifyUser } from './notif.service';
 
 /**
- * Try to match a waiting order to an available freelancer.
- * Sends notifications to both parties if matched.
- * Returns true if matched, false if no freelancer available.
+ * Broadcasts a waiting order to all currently available freelancers.
+ * Returns true if freelancers exist to receive the broadcast, false otherwise.
  */
-export async function matchOrder(orderId: string, excludeIds: string[] = []): Promise<boolean> {
+export async function matchOrder(orderId: string): Promise<boolean> {
   const order = await getOrderById(orderId);
   if (!order || order.status !== 'WAITING') return false;
 
-  const freelancer = await findAvailableFreelancer(excludeIds);
-  if (!freelancer) {
+  const freelancers = await findAllAvailableFreelancers();
+  if (freelancers.length === 0) {
     // Notify user that no freelancer is available right now
     await notifyUser(
       order.user.telegramId,
@@ -24,11 +22,7 @@ export async function matchOrder(orderId: string, excludeIds: string[] = []): Pr
     return false;
   }
 
-  // Match: update order + generate contract
-  await assignFreelancer(orderId, freelancer.id);
-  await generateContract(orderId, freelancer.id);
-
-  // Notify user
+  // Create markup button
   const orderType = { ANJEM: '🚗 Antar Jemput', JASTIP: '🛍 Jastip', JASA: '✨ Jasa Lainnya' }[order.type];
   const acceptKeyboard = new InlineKeyboard()
     .text('✅ Terima', `accept:${orderId}`)
@@ -38,48 +32,29 @@ export async function matchOrder(orderId: string, excludeIds: string[] = []): Pr
     ? `Rp${order.estimatedPrice.toLocaleString('id-ID')}`
     : 'Nego / Driver Tentukan';
 
-  // Notify freelancer to accept/decline within 60s
-  await notifyUser(
-    freelancer.user.telegramId,
-    `🔔 <b>Pesanan Baru!</b>\n\n` +
-    `📦 <b>Layanan:</b> ${orderType}\n` +
-    `📍 <b>Jemput:</b> ${order.pickupLocation ?? order.jastipDetail ?? order.jasaDetail}\n` +
-    `${order.dropLocation ? `📍 <b>Tujuan:</b> ${order.dropLocation}\n` : ''}` +
-    `💰 <b>Tawaran User:</b> ${priceText}\n\n` +
-    `<i>Kamu punya <b>60 detik</b> untuk menerima atau menolak.</i>`,
-    { reply_markup: acceptKeyboard },
+  // Broadcast to all available freelancers in parallel
+  const broadcastPromises = freelancers.map((freelancer) =>
+    notifyUser(
+      freelancer.user.telegramId,
+      `🔔 <b>Pesanan Baru!</b>\n\n` +
+      `📦 <b>Layanan:</b> ${orderType}\n` +
+      `📍 <b>Jemput:</b> ${order.pickupLocation ?? order.jastipDetail ?? order.jasaDetail}\n` +
+      `${order.dropLocation ? `📍 <b>Tujuan:</b> ${order.dropLocation}\n` : ''}` +
+      `💰 <b>Tawaran User:</b> ${priceText}\n\n` +
+      `<i>Klik Terima di bawah ini jika kamu bersedia mengambil pesanan.</i>`,
+      { reply_markup: acceptKeyboard },
+    ).catch((err) => {
+      console.error(`[Broadcast] Gagal mengirim penawaran ke driver ${freelancer.user.name}:`, err);
+    })
   );
 
-  // Notify user that a freelancer was found
+  await Promise.all(broadcastPromises);
+
+  // Notify user that the order has been broadcasted
   await notifyUser(
     order.user.telegramId,
-    `✅ <b>Freelancer ditemukan!</b>\n\n` +
-    `👤 <b>${freelancer.user.name}</b>\n` +
-    `⭐ Rating: ${freelancer.avgRating.toFixed(1)} · ${freelancer.totalOrders} order\n\n` +
-    `Menunggu freelancer mengkonfirmasi... (maks 60 detik)`,
+    `🔍 <b>Mencari driver...</b>\n\nPesananmu telah disebarkan ke ${freelancers.length} driver aktif. Mohon tunggu konfirmasi...`,
   );
-
-  // Auto-cancel freelancer slot after 60s if no response
-  setTimeout(async () => {
-    const refreshed = await getOrderById(orderId);
-    if (refreshed?.status === 'MATCHED') {
-      // Still MATCHED but freelancer never accepted → re-queue
-      await db.order.update({
-        where: { id: orderId },
-        data: {
-          status: 'WAITING',
-          freelancerId: null,
-          matchedAt: null,
-        },
-      });
-      await notifyUser(
-        order.user.telegramId,
-        '⚠️ Freelancer tidak merespons.\nKami sedang mencari freelancer lain...',
-      );
-      // Try matching again, excluding this freelancer
-      await matchOrder(orderId, [...excludeIds, freelancer.id]);
-    }
-  }, 60_000);
 
   return true;
 }

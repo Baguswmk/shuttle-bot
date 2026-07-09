@@ -68,6 +68,18 @@ export async function findAvailableFreelancer(excludeIds?: string[]) {
   });
 }
 
+export async function findAllAvailableFreelancers() {
+  return db.freelancer.findMany({
+    where: {
+      status: 'APPROVED',
+      ordersAsFreelancer: {
+        none: { status: { in: ['MATCHED', 'RUNNING'] } },
+      },
+    },
+    include: { user: true },
+  });
+}
+
 export async function updateFreelancerRating(freelancerId: string) {
   const ratings = await db.order.findMany({
     where: { freelancerId, rating: { not: null } },

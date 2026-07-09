@@ -420,10 +420,10 @@ export function registerStartHandler(bot: Bot<BotContext>) {
   // ── Freelancer accept / decline order ────────────────────────────────────────
   bot.callbackQuery(/^accept:(.+)$/, async (ctx) => {
     const orderId = ctx.match[1];
-    const order = await getOrderById(orderId);
-
+    
     const freelancer = await db.freelancer.findFirst({
       where: { user: { telegramId: BigInt(ctx.from.id) } },
+      include: { user: true },
     });
 
     if (!freelancer) {
@@ -434,43 +434,18 @@ export function registerStartHandler(bot: Bot<BotContext>) {
       return;
     }
 
-    if (!order || order.status !== 'MATCHED' || order.freelancerId !== freelancer.id) {
-      await ctx.answerCallbackQuery({
-        text: '❌ Tawaran pesanan ini sudah kedaluwarsa atau diberikan ke driver lain.',
-        show_alert: true,
-      });
-      try {
-        await ctx.editMessageText('⚠️ <i>Pesanan ini sudah kedaluwarsa atau diambil oleh driver lain.</i>', { parse_mode: 'HTML' });
-      } catch (_) {}
-      return;
-    }
-
-    await ctx.answerCallbackQuery('✅ Diterima!');
-
-    // ── Fitur 4: Race-condition guard ────────────────────────────────────────
-    // If this driver already has a RUNNING order (from a concurrent match),
-    // re-queue the current order instead of double-assigning.
+    // Race-condition guard: check if driver already has a RUNNING order
     const alreadyRunning = await db.order.findFirst({
       where: {
-        freelancerId: order.freelancerId!,
+        freelancerId: freelancer.id,
         status: 'RUNNING',
       },
     });
     if (alreadyRunning) {
-      await ctx.reply(
-        `❌ <b>Kamu sudah punya order aktif (#${alreadyRunning.orderNumber}) yang sedang berjalan!</b>\n\n` +
-        `Pesanan ini dikembalikan ke antrian untuk dicarikan driver lain.`,
-        { parse_mode: 'HTML' },
-      );
-      await db.order.update({
-        where: { id: orderId },
-        data: { status: 'WAITING', freelancerId: null, matchedAt: null },
+      await ctx.answerCallbackQuery({
+        text: `❌ Kamu sudah punya order aktif (#${alreadyRunning.orderNumber}) yang sedang berjalan!`,
+        show_alert: true,
       });
-      await notifyUser(
-        order.user.telegramId,
-        '⚠️ Driver tidak dapat menerima pesanan saat ini. Sedang mencari driver lain...',
-      );
-      await matchOrder(orderId);
       return;
     }
 
@@ -479,94 +454,111 @@ export function registerStartHandler(bot: Bot<BotContext>) {
       await db.user.update({
         where: { telegramId: BigInt(ctx.from.id) },
         data: { username: ctx.from.username },
+      }).catch(console.error);
+    }
+
+    // Try to lock and claim the order
+    try {
+      const order = await db.$transaction(async (tx) => {
+        const ord = await tx.order.findUnique({
+          where: { id: orderId },
+        });
+
+        if (!ord || ord.status !== 'WAITING') {
+          throw new Error('NOT_AVAILABLE');
+        }
+
+        // Lock and update
+        return await tx.order.update({
+          where: { id: orderId },
+          data: {
+            status: 'RUNNING',
+            freelancerId: freelancer.id,
+            matchedAt: new Date(),
+            startedAt: new Date(),
+          },
+          include: { user: true, freelancer: { include: { user: true } } },
+        });
       });
+
+      await ctx.answerCallbackQuery('✅ Pesanan diterima!');
+
+      // Generate contract
+      const { generateContract } = await import('../services/contract.service');
+      await generateContract(orderId, freelancer.id);
+
+      const driverUser     = order.freelancer?.user;
+      const driverUsername = driverUser?.username ?? ctx.from.username;
+      const driverPhone    = driverUser?.phone;
+      const flrUsername    = driverUsername
+        ? `@${driverUsername}`
+        : `<i>(Username tidak diatur oleh driver)</i>`;
+
+      // Build chat buttons
+      const chatKeyboard = new InlineKeyboard();
+      if (driverUsername) {
+        chatKeyboard.url('💬 Chat via Telegram', `https://t.me/${driverUsername}`).row();
+      }
+      if (driverPhone) {
+        const waNumber = driverPhone.replace(/\D/g, '').replace(/^0/, '62');
+        chatKeyboard.url('📱 Chat via WhatsApp', `https://wa.me/${waNumber}`).row();
+      }
+      const hasButtons = driverUsername || driverPhone;
+
+      const estimasiText = order.estimatedPrice > 0
+        ? `Tawaran harga Rp${order.estimatedPrice.toLocaleString('id-ID')} & waktu tiba 5–15 menit adalah estimasi.`
+        : `Tarif ditentukan langsung oleh driver (Nego) & waktu tiba 5–15 menit adalah estimasi.`;
+
+      await notifyUser(
+        order.user.telegramId,
+        `🚀 <b>Driver dalam perjalanan!</b>\n\n` +
+        `👤 <b>Nama Driver:</b> ${driverUser?.name ?? 'Freelancer'}\n` +
+        `💬 <b>Telegram Driver:</b> ${flrUsername}\n\n` +
+        `⚠️ <b>Catatan:</b>\n` +
+        `• ${estimasiText}\n` +
+        `• Tarif final dapat dinegosiasikan langsung dengan driver via tombol di bawah:`,
+        hasButtons ? { reply_markup: chatKeyboard } : undefined,
+      );
+
+      // Edit message in this driver's DM to show locked state and Mark Done button
+      await ctx.editMessageText(
+        `✅ <b>Pesanan Terkunci!</b>\n` +
+        `Segera menuju lokasi penjemputan/belanja.\n\n` +
+        `👤 <b>Customer:</b> ${order.user.name}\n` +
+        `📍 <b>Lokasi:</b> ${order.pickupLocation ?? order.jastipDetail ?? order.jasaDetail}`,
+        {
+          parse_mode: 'HTML',
+          reply_markup: new InlineKeyboard().text('✅ Tandai Selesai', `done:${orderId}`),
+        }
+      ).catch(console.error);
+
+    } catch (err: any) {
+      if (err.message === 'NOT_AVAILABLE') {
+        await ctx.answerCallbackQuery({
+          text: '❌ Maaf, pesanan ini sudah diambil oleh driver lain.',
+          show_alert: true,
+        });
+        try {
+          await ctx.editMessageText('⚠️ <i>Pesanan ini sudah diambil oleh driver lain.</i>', { parse_mode: 'HTML' });
+        } catch (_) {}
+      } else {
+        console.error('[Accept Callback Error]', err);
+        await ctx.answerCallbackQuery({
+          text: '❌ Gagal menerima pesanan.',
+          show_alert: true,
+        });
+      }
     }
-
-    await updateOrderStatus(orderId, 'RUNNING');
-    const updatedOrder = await getOrderById(orderId);
-
-    const driverUser     = updatedOrder?.freelancer?.user;
-    const driverUsername = driverUser?.username ?? ctx.from.username;
-    const driverPhone    = driverUser?.phone;
-    const flrUsername    = driverUsername
-      ? `@${driverUsername}`
-      : `<i>(Username tidak diatur oleh driver)</i>`;
-
-    // ── Fitur 3: Build chat buttons ───────────────────────────────────────────
-    const chatKeyboard = new InlineKeyboard();
-    if (driverUsername) {
-      chatKeyboard.url('💬 Chat via Telegram', `https://t.me/${driverUsername}`).row();
-    }
-    if (driverPhone) {
-      const waNumber = driverPhone.replace(/\D/g, '').replace(/^0/, '62');
-      chatKeyboard.url('📱 Chat via WhatsApp', `https://wa.me/${waNumber}`).row();
-    }
-    const hasButtons = driverUsername || driverPhone;
-
-    const estimasiText = order.estimatedPrice > 0
-      ? `Tawaran harga Rp${order.estimatedPrice.toLocaleString('id-ID')} & waktu tiba 5–15 menit adalah estimasi.`
-      : `Tarif ditentukan langsung oleh driver (Nego) & waktu tiba 5–15 menit adalah estimasi.`;
-
-    await notifyUser(
-      order.user.telegramId,
-      `🚀 <b>Driver dalam perjalanan!</b>\n\n` +
-      `👤 <b>Nama Driver:</b> ${driverUser?.name ?? 'Freelancer'}\n` +
-      `💬 <b>Telegram Driver:</b> ${flrUsername}\n\n` +
-      `⚠️ <b>Catatan:</b>\n` +
-      `• ${estimasiText}\n` +
-      `• Tarif final dapat dinegosiasikan langsung dengan driver via tombol di bawah:`,
-      hasButtons ? { reply_markup: chatKeyboard } : undefined,
-    );
-
-    await ctx.reply(
-      '✅ Pesanan diterima! Segera menuju lokasi penjemputan.',
-      { reply_markup: new InlineKeyboard().text('✅ Tandai Selesai', `done:${orderId}`) },
-    );
   });
 
   bot.callbackQuery(/^decline:(.+)$/, async (ctx) => {
     const orderId = ctx.match[1];
-    const order = await getOrderById(orderId);
-    if (!order) return;
-
-    const freelancer = await db.freelancer.findFirst({
-      where: { user: { telegramId: BigInt(ctx.from.id) } },
-    });
-
-    if (!freelancer) {
-      await ctx.answerCallbackQuery({
-        text: '❌ Anda bukan freelancer terdaftar.',
-        show_alert: true,
-      });
-      return;
-    }
-
-    if (order.status !== 'MATCHED' || order.freelancerId !== freelancer.id) {
-      await ctx.answerCallbackQuery({
-        text: '❌ Tawaran pesanan ini sudah kedaluwarsa atau diberikan ke driver lain.',
-        show_alert: true,
-      });
-      try {
-        await ctx.editMessageText('⚠️ <i>Pesanan ini sudah kedaluwarsa atau diambil oleh driver lain.</i>', { parse_mode: 'HTML' });
-      } catch (_) {}
-      return;
-    }
-
-    await ctx.answerCallbackQuery('❌ Ditolak');
-
-    // Re-queue
-    await db.order.update({
-      where: { id: orderId },
-      data: { status: 'WAITING', freelancerId: null, matchedAt: null },
-    });
-
-    await notifyUser(
-      order.user.telegramId,
-      '⚠️ Freelancer menolak pesanan. Mencari freelancer lain...',
-    );
-
-    await matchOrder(orderId);
-    await ctx.reply('Pesanan dikembalikan ke antrian.');
+    
+    // Simply remove buttons from this driver's private chat
+    try {
+      await ctx.editMessageText('❌ <i>Tawaran pesanan ditolak.</i>', { parse_mode: 'HTML' });
+    } catch (_) {}
+    await ctx.answerCallbackQuery('❌ Tawaran ditolak');
   });
 
   // Freelancer marks order as done (Prompts for final price)
