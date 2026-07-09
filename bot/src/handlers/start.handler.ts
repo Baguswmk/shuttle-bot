@@ -419,10 +419,33 @@ export function registerStartHandler(bot: Bot<BotContext>) {
 
   // ── Freelancer accept / decline order ────────────────────────────────────────
   bot.callbackQuery(/^accept:(.+)$/, async (ctx) => {
-    await ctx.answerCallbackQuery('✅ Diterima!');
     const orderId = ctx.match[1];
     const order = await getOrderById(orderId);
-    if (!order || order.status !== 'MATCHED') return;
+
+    const freelancer = await db.freelancer.findFirst({
+      where: { user: { telegramId: BigInt(ctx.from.id) } },
+    });
+
+    if (!freelancer) {
+      await ctx.answerCallbackQuery({
+        text: '❌ Anda bukan freelancer terdaftar.',
+        show_alert: true,
+      });
+      return;
+    }
+
+    if (!order || order.status !== 'MATCHED' || order.freelancerId !== freelancer.id) {
+      await ctx.answerCallbackQuery({
+        text: '❌ Tawaran pesanan ini sudah kedaluwarsa atau diberikan ke driver lain.',
+        show_alert: true,
+      });
+      try {
+        await ctx.editMessageText('⚠️ <i>Pesanan ini sudah kedaluwarsa atau diambil oleh driver lain.</i>', { parse_mode: 'HTML' });
+      } catch (_) {}
+      return;
+    }
+
+    await ctx.answerCallbackQuery('✅ Diterima!');
 
     // ── Fitur 4: Race-condition guard ────────────────────────────────────────
     // If this driver already has a RUNNING order (from a concurrent match),
@@ -502,10 +525,34 @@ export function registerStartHandler(bot: Bot<BotContext>) {
   });
 
   bot.callbackQuery(/^decline:(.+)$/, async (ctx) => {
-    await ctx.answerCallbackQuery('❌ Ditolak');
     const orderId = ctx.match[1];
     const order = await getOrderById(orderId);
     if (!order) return;
+
+    const freelancer = await db.freelancer.findFirst({
+      where: { user: { telegramId: BigInt(ctx.from.id) } },
+    });
+
+    if (!freelancer) {
+      await ctx.answerCallbackQuery({
+        text: '❌ Anda bukan freelancer terdaftar.',
+        show_alert: true,
+      });
+      return;
+    }
+
+    if (order.status !== 'MATCHED' || order.freelancerId !== freelancer.id) {
+      await ctx.answerCallbackQuery({
+        text: '❌ Tawaran pesanan ini sudah kedaluwarsa atau diberikan ke driver lain.',
+        show_alert: true,
+      });
+      try {
+        await ctx.editMessageText('⚠️ <i>Pesanan ini sudah kedaluwarsa atau diambil oleh driver lain.</i>', { parse_mode: 'HTML' });
+      } catch (_) {}
+      return;
+    }
+
+    await ctx.answerCallbackQuery('❌ Ditolak');
 
     // Re-queue
     await db.order.update({
