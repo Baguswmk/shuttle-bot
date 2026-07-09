@@ -9,6 +9,14 @@ import broadcastRouter   from './routes/broadcast.route';
 
 const router = Router();
 
+// ── Health Check ──────────────────────────────────────────────────────────────
+router.get('/health', (_req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 router.post('/auth/login', (req, res) => {
   const { username, password } = req.body;

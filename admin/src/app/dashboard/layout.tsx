@@ -57,7 +57,7 @@ export default function DashboardLayout({
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const res = await fetch(process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/../health` : 'http://localhost:3002/health');
+        const res = await fetch(process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/health` : 'http://localhost:3012/api/health');
         if (res.ok) {
           setServerStatus('online');
         } else {
